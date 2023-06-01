@@ -1,11 +1,13 @@
-const express = require("express")
+const express = require("express");
+const cors = require("cors");
 require("dotenv").config();
 const { Configuration, OpenAIApi } = require("openai");
-
+const { PlaidApi, PlaidEnvironments } = require('plaid');
 const app = express();
-
+app.use(cors());
 app.use(express.json());
 
+//OpenAI API =====================
 const configuration = new Configuration({
     apiKey: process.env.OPEN_AI_KEY,
 });
@@ -24,22 +26,52 @@ app.post("/test", async (req, res) => {
     } catch (error) {}
 })
 
+
+
+//Plaid API =====================
+const plaid_configuration = new Configuration({
+  basePath: PlaidEnvironments.sandbox,
+  baseOptions: {
+    headers: {
+      'PLAID-CLIENT-ID': process.env.PLAID_CLIENT_ID,
+      'PLAID-SECRET': process.env.PLAID_SECRET_KEY,
+    },
+  },
+});
+
+const plaidClient = new PlaidApi(plaid_configuration);
+
+// used for plaid token generation
+app.post('/create_link_token', async function (request, response) {
+  const plaidRequest = {
+    user: {
+      // This should correspond to a unique id for the current user.
+      client_user_id: 'tempUser',
+    },
+    client_name: 'Plaid Test App',
+    products: ['transactions'],
+    language: 'en',
+    redirect_uri: 'http://localhost:3000/',
+    country_codes: ['GB'],
+  };
+  try {
+    const createTokenResponse = await plaidClient.linkTokenCreate(plaidRequest);
+    response.json(createTokenResponse.data);
+  } catch (error) {
+    response.status(500).send("Failed to create link token");
+    // handle error
+  }
+});
+
 const port = process.env.PORT || 3001;
 
 app.listen(port, () => console.log(`Server is listening on Port ${port}`));
 
-// import { usePlaidLink } from 'react-plaid-link';
-// import { Configuration, PlaidApi, PlaidEnvironments } from 'plaid';
 
-// const configuration = new Configuration({
-//   basePath: PlaidEnvironments.sandbox,
-//   baseOptions: {
-//     headers: {
-//       'PLAID-CLIENT-ID': '64768fb8d454430013b3997d',
-//       'PLAID-SECRET': 'eaac864fd7c6fac49e577ea098cc21',
-//     },
-//   },
-// });
+// import { usePlaidLink } from 'react-plaid-link';
+//
+
+
 
 // const client = new PlaidApi(configuration);
 // function App() {
