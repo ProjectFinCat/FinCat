@@ -11,6 +11,9 @@ function App() {
     <div class="container">
       <div className="App">
         <header className="App-header">
+          <h1>
+            FinCat
+          </h1>
           <img src={logo} className="App-logo" alt="logo" />
 
           <h3>
