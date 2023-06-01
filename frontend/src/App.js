@@ -8,15 +8,17 @@ axios.defaults.baseURL = "http://localhost:3001"
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
+    <div class="container">
+      <div className="App">
+        <header className="App-header">
+          <img src={logo} className="App-logo" alt="logo" />
 
-        <p>
-          Connect your bank account via Plaid
-        </p>
-        <PlaidButton />
-      </header>
+          <h3>
+            Connect your bank account via Plaid
+          </h3>
+          <PlaidButton />
+        </header>
+      </div>
     </div>
   );
 }
