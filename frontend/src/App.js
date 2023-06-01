@@ -1,12 +1,32 @@
-import logo from './logo.svg';
+import logo from './HomepageCard.gif';
 import './App.css';
+import './Buttons.css'
 import {useEffect, useState} from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 import axios from 'axios';
-
 axios.defaults.baseURL = "http://localhost:3001"
 
 function App() {
+  return (
+    <div class="container">
+      <div className="App">
+        <header className="App-header">
+          <h1>
+            FinCat
+          </h1>
+          <img src={logo} className="App-logo" alt="logo" />
+
+          <h3>
+            Connect your bank account via Plaid
+          </h3>
+          <PlaidButton />
+        </header>
+      </div>
+    </div>
+  );
+}
+
+function PlaidButton() {
   const [token,setToken] = useState();
 
   useEffect( () => {
@@ -23,28 +43,11 @@ function App() {
       // send public_token to server
     },
   });
+  
   return (
-    <div className="App">
-      
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-        <button onClick={() => open()} disabled={!ready}>
-        Connect a bank account
-        </button>
-      </header>
-     
-    </div>
+    <button class="plaid-button" onClick={() => open()} disabled={!ready}>
+    Connect
+    </button>
   );
 }
 
