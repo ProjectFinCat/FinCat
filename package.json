@@ -1,6 +1,6 @@
-{  "scripts": {
-    "server": "npm run dev --prefix server",
-    "client": "npm start --prefix client",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
-  }
+{"scripts":{
+    "backend":"npm run dev --prefix backend",
+    "frontend":"npm start --prefix frontend",
+    "dev":"concurrently \"npm run backend\" \"npm run frontend\""},
+    "dependencies":{"concurrently":"^8.0.1"}
 }
