@@ -8,22 +8,33 @@ app.use(cors());
 app.use(express.json());
 
 //OpenAI API =====================
-const configuration = new Configuration({
+const openai_configuration = new Configuration({
+    organization: "org-Fof5q6clGNwq4sfOJsCf2tln",
     apiKey: process.env.OPEN_AI_KEY,
 });
-const openai = new OpenAIApi(configuration);
+const openai = new OpenAIApi(openai_configuration);
 
 app.post("/test", async (req, res) => {
+    // console.log("this is post test")
+    console.log(req.body[0])
     try {
-        // const response = await openai.createCompletion({
-            // model: "gpt-3.5",
-            // prompt: ``,
-        // });
+        // const { prompt } = req.body[0];
+        const completion = await openai.createCompletion(
+            {
+              model: "text-davinci-003",
+              message: "Categorise this: { \"merchant_name\": \"TestMerchant\", \"description\": \"Some Description For This Transaction\", \"amount\": 5.625, \"date\": \"2023-05-02\" }",
+              temperature: 0,
+            //   max_tokens: 55,
+            }
+          );
 
         return res.status(200).json({
-            message: "Working, Server is up",
+            message: completion.data.choices[0].text,
         });
-    } catch (error) {}
+    } catch (error) {
+        console.log(error)
+        return res.status(500).send("Internal Error")
+    }
 })
 
 
@@ -63,6 +74,7 @@ app.post('/create_link_token', async function (request, response) {
   }
 });
 
+// Finding an avaiable port for server, else port 3001.
 const port = process.env.PORT || 3001;
 
 app.listen(port, () => console.log(`Server is listening on Port ${port}`));
