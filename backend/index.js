@@ -17,6 +17,7 @@ const openai = new OpenAIApi(openai_configuration);
 app.post("/test", async (req, res) => {
     // console.log("this is post test")
     console.log(req.body[0])
+
     try {
         // const { prompt } = req.body[0];
         const completion = await openai.createCompletion(
@@ -63,7 +64,7 @@ const plaid_configuration = new Configuration({
 
 const plaidClient = new PlaidApi(plaid_configuration);
 
-// used for plaid token generation
+// used for link with plaid servers and receiving a token
 app.post('/create_link_token', async function (request, response) {
   const plaidRequest = {
     user: {
@@ -85,7 +86,58 @@ app.post('/create_link_token', async function (request, response) {
   }
 });
 
-// Finding an avaiable port for server, else port 3001.
+// used to get an access token from plaid
+app.post('/exchange_public_token', async function (
+  request,
+  response,
+  next,
+) {
+  const publicToken = request.body.public_token;
+  try {
+    const plaidResponse = await plaidClient.itemPublicTokenExchange({
+      public_token: publicToken,
+    });
+
+    const accessToken = plaidResponse.data.access_token;
+    response.json({ public_token_exchange: accessToken });
+  } catch (error) {
+    response.status(500).send("Internal Error");
+  }
+});
+
+// used to get transactions
+
+app.post('/get_transactions', async function (request, response) {
+  const plaidRequest = {
+    access_token: request.body.access_token,
+    start_date: request.body.start_date,
+    end_date: request.body.end_date
+  };
+  try {
+    const transactionsResponse = await plaidClient.transactionsGet(plaidRequest);
+    const total_transactions = transactionsResponse.data.total_transactions;
+    let transactions = transactionsResponse.data.transactions;
+    while (transactions.length < total_transactions) {
+      const paginatedRequest = {
+        access_token: request.body.access_token,
+        start_date: request.body.start_date,
+        end_date: request.body.end_date,
+        options: {
+          offset: transactions.length,
+        },
+      };
+      const paginatedResponse = await client.transactionsGet(paginatedRequest);
+      transactions = transactions.concat(
+        paginatedResponse.data.transactions,
+      );
+    }
+    response.json(transactions);
+  } catch (error) {
+    response.status(500).send("Failed to create link token");
+    // handle error
+  }
+});
+
 const port = process.env.PORT || 3001;
 
 app.listen(port, () => console.log(`Server is listening on Port ${port}`));
