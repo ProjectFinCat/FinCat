@@ -22,20 +22,31 @@ app.post("/test", async (req, res) => {
         const completion = await openai.createCompletion(
             {
               model: "text-davinci-003",
-              message: "Categorise this: { \"merchant_name\": \"TestMerchant\", \"description\": \"Some Description For This Transaction\", \"amount\": 5.625, \"date\": \"2023-05-02\" }",
-              temperature: 0,
-            //   max_tokens: 55,
-            }
+              prompt: `Categorise this: { "merchant_name": "TestMerchant", "description": "Some Description For This Transaction", "amount": 5.625, "date": "2023-05-02"}
+              ###`,
+            max_tokens:64,
+            temperature: 0,
+            top_p: 1.0,
+            frequency_penalty: 0.0,
+            presence_penalty: 0.0,
+            stop: ["\n"],
+        }
           );
 
         return res.status(200).json({
-            message: completion.data.choices[0].text,
+            success: true,
+            data: completion.data.choices[0].text,
         });
     } catch (error) {
         console.log(error)
-        return res.status(500).send("Internal Error")
+        return res.status(500).json({
+            success: false,
+            error: error.completion
+              ? error.rcompletion.data
+              : "There was an issue on the server",
+        });
     }
-})
+});
 
 
 
