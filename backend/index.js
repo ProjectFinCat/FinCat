@@ -15,7 +15,23 @@ const openai_configuration = new Configuration({
 const openai = new OpenAIApi(openai_configuration);
 
 app.post("/categorise_transactions", async (req, res) => {
-    var uncategorisedTransactions = req.body; // Only need array part in req.body
+  const { access_token, start_date, end_date } = request.body;
+  let transactions = null;
+  try {
+     transactions = await getTransactions(access_token, start_date, end_date);
+     
+  } catch (error) {
+    return response.status(500).json({
+      error: "Failed to get transactions",
+      description: error.message
+    });
+  }
+  
+  uncategorisedTransactions = transactions.data.map((entry,index) => (
+    {id: index, merchant_name: entry.merchant_name, description: entry.name }));
+    // console.log("this is post test")
+    console.log(uncategorisedTransactions)
+
     // Extra properties such as {}, are present and doesn't allow gpt to categorise
     let uncategorisedString = "";
     let toString = ({id, merchant_name, description}) => `${id}, ${merchant_name}: ${description}`; // convert
@@ -87,8 +103,10 @@ app.post('/create_link_token', async function (request, response) {
     const createTokenResponse = await plaidClient.linkTokenCreate(plaidRequest);
     response.json(createTokenResponse.data);
   } catch (error) {
-    response.status(500).send("Failed to create link token");
-    // handle error
+    response.status(500).json({
+      error: "Failed to create link token",
+      description: error
+    });
   }
 });
 
@@ -107,7 +125,10 @@ app.post('/exchange_public_token', async function (
     const accessToken = plaidResponse.data.access_token;
     response.json({ public_token_exchange: accessToken });
   } catch (error) {
-    response.status(500).send("Internal Error");
+    response.status(500).json({
+      error: "Failed to exchange public token",
+      description: error
+    });
   }
 });
 
@@ -123,6 +144,7 @@ app.post('/get_transactions', async function (request, response) {
     const transactionsResponse = await plaidClient.transactionsGet(plaidRequest);
     const total_transactions = transactionsResponse.data.total_transactions;
     let transactions = transactionsResponse.data.transactions;
+
     while (transactions.length < total_transactions) {
       const paginatedRequest = {
         access_token: request.body.access_token,
@@ -139,26 +161,47 @@ app.post('/get_transactions', async function (request, response) {
     }
     response.json(transactions);
   } catch (error) {
-    response.status(500).send("Failed to create link token");
-    // handle error
+  response.status(500).json({
+    error: "Failed to get transactions",
+    description: error
+  });
+  }
+});
+
+async function getTransactions(access_token, start_date, end_date) {
+  const plaidRequest = {
+    access_token,
+    start_date,
+    end_date
+  };
+  try {
+    const transactionsResponse = await plaidClient.transactionsGet(plaidRequest);
+    const total_transactions = transactionsResponse.data.total_transactions;
+    let transactions = transactionsResponse.data.transactions;
+    
+    while (transactions.length < total_transactions) {
+      const paginatedRequest = {
+        access_token: request.body.access_token,
+        start_date: request.body.start_date,
+        end_date: request.body.end_date,
+        options: {
+          offset: transactions.length,
+        },
+      };
+      const paginatedResponse = await client.transactionsGet(paginatedRequest);
+      transactions = transactions.concat(
+        paginatedResponse.data.transactions,
+      );
+    }
+    response.json(transactions);
+  } catch (error) {
+  response.status(500).json({
+    error: "Failed to get transactions",
+    description: error
+  });
   }
 });
 
 const port = process.env.PORT || 3001;
 
 app.listen(port, () => console.log(`Server is listening on Port ${port}`));
-
-
-// import { usePlaidLink } from 'react-plaid-link';
-//
-
-
-
-// const client = new PlaidApi(configuration);
-// function App() {
-//   const { open, ready } = usePlaidLink({
-//   token: '<GENERATED_LINK_TOKEN>',
-//   onSuccess: (public_token, metadata) => {
-//     // send public_token to server
-//   },
-// });
