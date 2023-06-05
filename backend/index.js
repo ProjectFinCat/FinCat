@@ -12,63 +12,67 @@ const openai_configuration = new Configuration({
     organization: "org-Fof5q6clGNwq4sfOJsCf2tln",
     apiKey: process.env.OPEN_AI_KEY,
 });
+
 const openai = new OpenAIApi(openai_configuration);
 
 app.post("/categorise_transactions", async (req, res) => {
   const { access_token, start_date, end_date } = req.body;
+
   // Getting transactions from Plaid
-  let transactions = null;
+  let rawTransactionData = null;
   try {
-     transactions = await getTransactions(access_token, start_date, end_date);
-     
+    rawTransactionData = await getTransactions(access_token, start_date, end_date);
+    if (rawTransactionData.length == 0){
+      return res.status(500).json({
+        message: "Failed to get transactions",
+        description: "Received empty list of transactions."
+    });
+    }
   } catch (error) {
     return res.status(500).json({
-      error: "Failed to get transactions",
+      message: "Failed to get transactions",
       description: error.message
     });
   }
   
-  // 
-  uncategorisedTransactions = transactions.map((entry,index) => (`${index},${entry.merchant_name}: ${entry.name}`));
-  console.log(uncategorisedTransactions)
+  // Strip unnecessary data ahead of GPT query
+  uncategorisedInputData = rawTransactionData.map((entry,index) => (`${index},${entry.merchant_name}: ${entry.name}`));
 
+  // GPT query
     try {
-        const completion = await openai.createCompletion(
-            {
-              model: "text-davinci-003",
-              prompt: `Categorise each transaction: 
-              ${uncategorisedTransactions},
-              return in this format: [id,Category].
-              You can only use these categories: Food, Travel, Bills, Other.
-              Minimal token response.
-              ###`, // uncategorisedString is being inputed into the prompt. Adjust prompt instructions to get close to target
-            max_tokens:600, // I think up to 600 max tokens is a reasonable amount if needed 1000
-            temperature: 0,
-            top_p: 1.0,
-            frequency_penalty: 0.0,
-            presence_penalty: 0.0,
-        }
-          );
-          let transactionOrder = completion.data.choices[0].text.trim();
-          transactionOrder = transactionOrder.split(/(?<=\]),(?=\[)/g).map(entry=> entry.replace(/\[|\]/g,'').split(','));
-          console.log(transactionOrder);
+      const completion = await openai.createCompletion({
+        model: "text-davinci-003",
+        prompt: `These transactions are in the format "Id, description": 
+        ${uncategorisedInputData},
+          categorise them and return in json: {Category: [id,id..]}".
+          You can only use these categories: Food, Travel, Bills, Other.
+          No whitespace.
+          ###`, // uncategorisedString is being inputed into the prompt. Adjust prompt instructions to get close to target
+        max_tokens:600, // I think up to 600 max tokens is a reasonable amount if needed 1000
+        temperature: 0,
+        top_p: 1.0,
+        frequency_penalty: 0.0,
+        presence_penalty: 0.0,
+      });
+      
+      // Parse JSON response from gpt
+      let categorisedOutputOrder = JSON.parse(completion.data.choices[0].text.trim());
 
-          let orderedTransactions = {
-            Food: [],
-            Travel: [],
-            Bills: [],
-            Other:[]
-          }
-          transactionOrder.forEach(element => {
-            orderedTransactions[element[1]].push(transactions[element[0]]);
-          });
-          console.log(orderedTransactions);
-          // console.log(categorisedTransactions.map(entry=> (JSON.parse(entry))))
+      // Prepare final response container
+      let categorisedData = {
+        Food: [],
+        Travel: [],
+        Bills: [],
+        Other:[]
+      }
 
-          // categorisedTransactions = categorisedTransactions.split(',').map( entry=>(console.log(entry)))
-        // categorisedTransactions.replace('\n','')
+      // Categorise raw data according to order received from GPT
+      for (const key in categorisedOutputOrder) {
+        categorisedData[key] = categorisedOutputOrder[key].map( e => (rawTransactionData[e]));
+      }
 
-        return res.status(200).json(orderedTransactions);
+      // Respond
+      return res.status(200).json(categorisedData);
     } catch (error) {
         console.log(error)
         return res.status(500).json({
@@ -202,7 +206,6 @@ async function getTransactions(access_token, start_date, end_date) {
         paginatedResponse.data.transactions,
       );
     }
-    console.log(transactions);
     return transactions;
   } catch (error) {
     throw error;
