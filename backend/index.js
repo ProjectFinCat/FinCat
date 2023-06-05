@@ -76,11 +76,9 @@ app.post("/categorise_transactions", async (req, res) => {
     } catch (error) {
         console.log(error)
         return res.status(500).json({
-            success: false,
-            error: error.completion
-              ? error.rcompletion.data
-              : "There was an issue on the server",
-        });
+            message: "Failed to categorise data.",
+            description: error.message
+          });
     }
 });
 
@@ -117,8 +115,8 @@ app.post('/create_link_token', async function (request, response) {
     response.json(createTokenResponse.data);
   } catch (error) {
     response.status(500).json({
-      error: "Failed to create link token",
-      description: error
+      message: "Failed to create link token",
+      description: error.message
     });
   }
 });
@@ -139,48 +137,13 @@ app.post('/exchange_public_token', async function (
     response.json({ public_token_exchange: accessToken });
   } catch (error) {
     response.status(500).json({
-      error: "Failed to exchange public token",
-      description: error
+      message: "Failed to exchange public token",
+      description: error.message
     });
   }
 });
 
 // used to get transactions
-
-app.post('/get_transactions', async function (request, response) {
-  const plaidRequest = {
-    access_token: request.body.access_token,
-    start_date: request.body.start_date,
-    end_date: request.body.end_date
-  };
-  try {
-    const transactionsResponse = await plaidClient.transactionsGet(plaidRequest);
-    const total_transactions = transactionsResponse.data.total_transactions;
-    let transactions = transactionsResponse.data.transactions;
-
-    while (transactions.length < total_transactions) {
-      const paginatedRequest = {
-        access_token: request.body.access_token,
-        start_date: request.body.start_date,
-        end_date: request.body.end_date,
-        options: {
-          offset: transactions.length,
-        },
-      };
-      const paginatedResponse = await client.transactionsGet(paginatedRequest);
-      transactions = transactions.concat(
-        paginatedResponse.data.transactions,
-      );
-    }
-    response.json(transactions);
-  } catch (error) {
-  response.status(500).json({
-    error: "Failed to get transactions",
-    description: error
-  });
-  }
-});
-
 async function getTransactions(access_token, start_date, end_date) {
   const plaidRequest = {
     access_token,

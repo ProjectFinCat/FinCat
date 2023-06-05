@@ -31,8 +31,13 @@ function PlaidButton({setPublicToken}) {
   const [token,setToken] = useState();
   useEffect( () => {
     async function fetch() {
-      const response  = await axios.post("/create_link_token")
+      try {
+        const response  = await axios.post("/create_link_token")
       setToken(response.data.link_token);
+      } catch (error) {
+        //@Kevin < Can't connect to plaid at all < Display it pls
+      }
+      
     }
     fetch();
   }, [])
