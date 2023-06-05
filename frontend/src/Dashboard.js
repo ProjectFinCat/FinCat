@@ -13,12 +13,12 @@ function Dashboard({publicToken}) {
              // Delay for 1 second so that plaid may load the transactions
             await new Promise(resolve => setTimeout(resolve, 1000));
 
+            // @Kevin use this variable which contains the categorised transactions.
             const categorisedTransactions  = await axios.post("/categorise_transactions", {
                 access_token: accessToken,
                 start_date: '2023-01-01',
                 end_date: '2023-02-01'
             });
-            console.log(categorisedTransactions);
         }
         fetchData();
       }, [])
