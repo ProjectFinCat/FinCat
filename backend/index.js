@@ -200,7 +200,7 @@ async function getTransactions(access_token, start_date, end_date) {
     description: error
   });
   }
-});
+};
 
 const port = process.env.PORT || 3001;
 
