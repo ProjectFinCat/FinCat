@@ -13,22 +13,12 @@ function Dashboard({publicToken}) {
              // Delay for 1 second so that plaid may load the transactions
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Get transactions between the set dates
-            const transactions = await axios.post("/get_transactions", {
-                access_token: accessToken,
-                start_date: '2023-01-01',
-                end_date: '2023-02-01'
-            });
-
-            // Extract data relevant for categorisation.
-            // const uncategorisedTransactions = transactions.data.map((entry,index) => (
-            //                 {id: index, merchant_name: entry.merchant_name, description: entry.name }));
             const categorisedTransactions  = await axios.post("/categorise_transactions", {
                 access_token: accessToken,
                 start_date: '2023-01-01',
                 end_date: '2023-02-01'
             });
-
+            console.log(categorisedTransactions);
         }
         fetchData();
       }, [])

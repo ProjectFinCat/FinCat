@@ -15,39 +15,32 @@ const openai_configuration = new Configuration({
 const openai = new OpenAIApi(openai_configuration);
 
 app.post("/categorise_transactions", async (req, res) => {
-  const { access_token, start_date, end_date } = request.body;
+  const { access_token, start_date, end_date } = req.body;
+  // Getting transactions from Plaid
   let transactions = null;
   try {
      transactions = await getTransactions(access_token, start_date, end_date);
      
   } catch (error) {
-    return response.status(500).json({
+    return res.status(500).json({
       error: "Failed to get transactions",
       description: error.message
     });
   }
   
-  uncategorisedTransactions = transactions.data.map((entry,index) => (
-    {id: index, merchant_name: entry.merchant_name, description: entry.name }));
-    // console.log("this is post test")
-    console.log(uncategorisedTransactions)
+  // 
+  uncategorisedTransactions = transactions.map((entry,index) => (`${index},${entry.merchant_name}: ${entry.name}`));
+  console.log(uncategorisedTransactions)
 
-    // Extra properties such as {}, are present and doesn't allow gpt to categorise
-    let uncategorisedString = "";
-    let toString = ({id, merchant_name, description}) => `${id}, ${merchant_name}: ${description}`; // convert
-    for (let i = 0; i < uncategorisedTransactions.length; i++) {
-        uncategorisedString += toString(uncategorisedTransactions[i]) + " ";
-    }
-    console.log(uncategorisedString); // Just validating that arr is just req.body array taken from plaid
     try {
         const completion = await openai.createCompletion(
             {
               model: "text-davinci-003",
-              prompt: `Look at this array and categorise each transaction: 
-              ${uncategorisedString},
-              return an output in this format: id, Category.
-              You MUST ONLY use these categories: Food, Travel, Bills & Other.
-              Don't waste space with whitespace
+              prompt: `Categorise each transaction: 
+              ${uncategorisedTransactions},
+              return in this format: [id,Category].
+              You can only use these categories: Food, Travel, Bills, Other.
+              Minimal token response.
               ###`, // uncategorisedString is being inputed into the prompt. Adjust prompt instructions to get close to target
             max_tokens:600, // I think up to 600 max tokens is a reasonable amount if needed 1000
             temperature: 0,
@@ -56,10 +49,26 @@ app.post("/categorise_transactions", async (req, res) => {
             presence_penalty: 0.0,
         }
           );
-        console.log(completion.data.choices[0].text);
-        return res.status(200).json({
-            data: completion.data.choices[0].text,
-        });
+          let transactionOrder = completion.data.choices[0].text.trim();
+          transactionOrder = transactionOrder.split(/(?<=\]),(?=\[)/g).map(entry=> entry.replace(/\[|\]/g,'').split(','));
+          console.log(transactionOrder);
+
+          let orderedTransactions = {
+            Food: [],
+            Travel: [],
+            Bills: [],
+            Other:[]
+          }
+          transactionOrder.forEach(element => {
+            orderedTransactions[element[1]].push(transactions[element[0]]);
+          });
+          console.log(orderedTransactions);
+          // console.log(categorisedTransactions.map(entry=> (JSON.parse(entry))))
+
+          // categorisedTransactions = categorisedTransactions.split(',').map( entry=>(console.log(entry)))
+        // categorisedTransactions.replace('\n','')
+
+        return res.status(200).json(orderedTransactions);
     } catch (error) {
         console.log(error)
         return res.status(500).json({
@@ -193,14 +202,12 @@ async function getTransactions(access_token, start_date, end_date) {
         paginatedResponse.data.transactions,
       );
     }
-    response.json(transactions);
+    console.log(transactions);
+    return transactions;
   } catch (error) {
-  response.status(500).json({
-    error: "Failed to get transactions",
-    description: error
-  });
+    throw error;
   }
-});
+};
 
 const port = process.env.PORT || 3001;
 
