@@ -12,54 +12,67 @@ const openai_configuration = new Configuration({
     organization: "org-Fof5q6clGNwq4sfOJsCf2tln",
     apiKey: process.env.OPEN_AI_KEY,
 });
+
 const openai = new OpenAIApi(openai_configuration);
 
 app.post("/categorise_transactions", async (req, res) => {
-  const { access_token, start_date, end_date } = request.body;
-  let transactions = null;
+  const { access_token, start_date, end_date } = req.body;
+
+  // Getting transactions from Plaid
+  let rawTransactionData = null;
   try {
-     transactions = await getTransactions(access_token, start_date, end_date);
-     
+    rawTransactionData = await getTransactions(access_token, start_date, end_date);
+    if (rawTransactionData.length == 0){
+      return res.status(500).json({
+        message: "Failed to get transactions",
+        description: "Received empty list of transactions."
+    });
+    }
   } catch (error) {
-    return response.status(500).json({
-      error: "Failed to get transactions",
+    return res.status(500).json({
+      message: "Failed to get transactions",
       description: error.message
     });
   }
   
-  uncategorisedTransactions = transactions.data.map((entry,index) => (
-    {id: index, merchant_name: entry.merchant_name, description: entry.name }));
-    // console.log("this is post test")
-    console.log(uncategorisedTransactions)
+  // Strip unnecessary data ahead of GPT query
+  uncategorisedInputData = rawTransactionData.map((entry,index) => (`${index},${entry.merchant_name}: ${entry.name}`));
 
-    // Extra properties such as {}, are present and doesn't allow gpt to categorise
-    let uncategorisedString = "";
-    let toString = ({id, merchant_name, description}) => `${id}, ${merchant_name}: ${description}`; // convert
-    for (let i = 0; i < uncategorisedTransactions.length; i++) {
-        uncategorisedString += toString(uncategorisedTransactions[i]) + " ";
-    }
-    console.log(uncategorisedString); // Just validating that arr is just req.body array taken from plaid
+  // GPT query
     try {
-        const completion = await openai.createCompletion(
-            {
-              model: "text-davinci-003",
-              prompt: `Look at this array and categorise each transaction: 
-              ${uncategorisedString},
-              return an output in this format: id, Category.
-              You MUST ONLY use these categories: Food, Travel, Bills & Other.
-              Don't waste space with whitespace
-              ###`, // uncategorisedString is being inputed into the prompt. Adjust prompt instructions to get close to target
-            max_tokens:600, // I think up to 600 max tokens is a reasonable amount if needed 1000
-            temperature: 0,
-            top_p: 1.0,
-            frequency_penalty: 0.0,
-            presence_penalty: 0.0,
-        }
-          );
-        console.log(completion.data.choices[0].text);
-        return res.status(200).json({
-            data: completion.data.choices[0].text,
-        });
+      const completion = await openai.createCompletion({
+        model: "text-davinci-003",
+        prompt: `These transactions are in the format "Id, description": 
+        ${uncategorisedInputData},
+          categorise them and return in json: {Category: [id,id..]}".
+          You can only use these categories: Food, Travel, Bills, Other.
+          No whitespace.
+          ###`, // uncategorisedString is being inputed into the prompt. Adjust prompt instructions to get close to target
+        max_tokens:600, // I think up to 600 max tokens is a reasonable amount if needed 1000
+        temperature: 0,
+        top_p: 1.0,
+        frequency_penalty: 0.0,
+        presence_penalty: 0.0,
+      });
+      
+      // Parse JSON response from gpt
+      let categorisedOutputOrder = JSON.parse(completion.data.choices[0].text.trim());
+
+      // Prepare final response container
+      let categorisedData = {
+        Food: [],
+        Travel: [],
+        Bills: [],
+        Other:[]
+      }
+
+      // Categorise raw data according to order received from GPT
+      for (const key in categorisedOutputOrder) {
+        categorisedData[key] = categorisedOutputOrder[key].map( e => (rawTransactionData[e]));
+      }
+
+      // Respond
+      return res.status(200).json(categorisedData);
     } catch (error) {
         console.log(error)
         return res.status(500).json({
@@ -193,12 +206,9 @@ async function getTransactions(access_token, start_date, end_date) {
         paginatedResponse.data.transactions,
       );
     }
-    response.json(transactions);
+    return transactions;
   } catch (error) {
-  response.status(500).json({
-    error: "Failed to get transactions",
-    description: error
-  });
+    throw error;
   }
 };
 
