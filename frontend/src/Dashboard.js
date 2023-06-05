@@ -20,15 +20,15 @@ function Dashboard({publicToken}) {
                 end_date: '2023-02-01'
             });
 
-
             // Extract data relevant for categorisation.
             // const uncategorisedTransactions = transactions.data.map((entry,index) => (
             //                 {id: index, merchant_name: entry.merchant_name, description: entry.name }));
-            const categorisedTransactions  = await axios.post("/test", {
+            const categorisedTransactions  = await axios.post("/categorise_transactions", {
                 access_token: accessToken,
                 start_date: '2023-01-01',
                 end_date: '2023-02-01'
             });
+
         }
         fetchData();
       }, [])
