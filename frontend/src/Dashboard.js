@@ -19,7 +19,7 @@ function Dashboard({publicToken}) {
 
             const preparedTransactions = transactions.data.map((entry,index) => (
                             {id: index, merchant_name: entry.merchant_name, description: entry.name }));
-            const categorizedTransactions  = await axios.post("/test",preparedTransactions);
+            const categorizedTransactions  = await axios.post("/categorise_transactions",preparedTransactions);
         }
         fetchData();
       }, [])

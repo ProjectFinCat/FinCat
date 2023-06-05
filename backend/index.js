@@ -14,28 +14,34 @@ const openai_configuration = new Configuration({
 });
 const openai = new OpenAIApi(openai_configuration);
 
-app.post("/test", async (req, res) => {
-    // console.log("this is post test")
-    console.log(req.body[0])
-
+app.post("/categorise_transactions", async (req, res) => {
+    var uncategorisedTransactions = req.body; // Only need array part in req.body
+    // Extra properties such as {}, are present and doesn't allow gpt to categorise
+    let uncategorisedString = "";
+    let toString = ({id, merchant_name, description}) => `${id}, ${merchant_name}: ${description}`; // convert
+    for (let i = 0; i < uncategorisedTransactions.length; i++) {
+        uncategorisedString += toString(uncategorisedTransactions[i]) + " ";
+    }
+    console.log(uncategorisedString); // Just validating that arr is just req.body array taken from plaid
     try {
-        // const { prompt } = req.body[0];
         const completion = await openai.createCompletion(
             {
               model: "text-davinci-003",
-              prompt: `Categorise this: { "merchant_name": "TestMerchant", "description": "Some Description For This Transaction", "amount": 5.625, "date": "2023-05-02"}
-              ###`,
-            max_tokens:64,
+              prompt: `Look at this array and categorise each transaction: 
+              ${uncategorisedString},
+              return an output in this format: id, Category.
+              You MUST ONLY use these categories: Food, Travel, Bills & Other.
+              Don't waste space with whitespace
+              ###`, // uncategorisedString is being inputed into the prompt. Adjust prompt instructions to get close to target
+            max_tokens:600, // I think up to 600 max tokens is a reasonable amount if needed 1000
             temperature: 0,
             top_p: 1.0,
             frequency_penalty: 0.0,
             presence_penalty: 0.0,
-            stop: ["\n"],
         }
           );
-
+        console.log(completion.data.choices[0].text);
         return res.status(200).json({
-            success: true,
             data: completion.data.choices[0].text,
         });
     } catch (error) {
