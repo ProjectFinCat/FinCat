@@ -1,6 +1,6 @@
 # FinCat: A GPT powered financial categorizer.
 
-Fincat utilzes React to build a stylized frontend to display digestable financial data. User bank information
+Fincat utilizes React to build a stylized frontend to display digestible financial data. User bank information
 is accessed through Plaid integration. Transactions are then processed and fed into the OpenAI API to derive
 categorization. API communication for Plaid and OpenAI is handled on the backend through ExpressJS and NodeJS.
 Processed data is handed back to the frontend for display.
