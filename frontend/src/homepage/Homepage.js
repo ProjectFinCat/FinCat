@@ -1,10 +1,10 @@
-import logo from './HomepageCard.gif';
-import './App.css';
-import './Buttons.css'
+import logo from '../homepage/HomepageCard.gif';
+import '../homepage/Homepage.css';
+import '../components/Buttons.css'
 import {useEffect, useState} from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 import axios from 'axios';
-import Dashboard from './Dashboard';
+import Dashboard from '../dashboard/Dashboard';
 axios.defaults.baseURL = "http://localhost:3001"
 
 function App() {
