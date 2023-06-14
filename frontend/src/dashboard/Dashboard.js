@@ -35,7 +35,7 @@ function Dashboard({publicToken}) {
       }, [])
     return (
         <div>
-            <h3>Welcome to the Dashboard </h3>
+            <h3>Welcome to the Dashboard</h3>
         </div>
     )
 }

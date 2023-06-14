@@ -44,7 +44,7 @@ app.post("/categorise_transactions", async (req, res) => {
         model: "text-davinci-003",
         prompt: `These transactions are in the format "Id, description": 
         ${uncategorisedInputData},
-          categorise them and return in json: {Category: [id,id..]}".
+          categorise them and return in json: {"Category": [id,id..]}".
           You can only use these categories: Food, Travel, Bills, Other.
           No whitespace.
           ###`, // uncategorisedString is being inputed into the prompt. Adjust prompt instructions to get close to target
