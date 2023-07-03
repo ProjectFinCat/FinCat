@@ -1,8 +1,1 @@
-{"scripts":{
-    "backend":"npm run dev --prefix backend",
-    "frontend":"npm start --prefix frontend",
-    "dev":"concurrently \"npm run backend\" \"npm run frontend\"",
-    "update": "npm install && cd backend && npm install && cd ../frontend && npm install"
-},
-    "dependencies":{"concurrently":"^8.0.1"}
-}
+{"scripts":{"backend":"npm run dev --prefix backend","frontend":"npm start --prefix frontend","dev":"concurrently \"npm run backend\" \"npm run frontend\"","update":"npm install && cd backend && npm install && cd ../frontend && npm install"},"dependencies":{"chart.js":"^4.3.0","concurrently":"^8.0.1","react-chartjs-2":"^5.2.0"}}
