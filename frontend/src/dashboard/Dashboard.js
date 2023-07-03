@@ -1,17 +1,34 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useState, React, useRef} from 'react';
 import axios from 'axios';
+import { Doughnut } from 'react-chartjs-2';
+
+import '../dashboard/Dashboard.css';
 
 function Dashboard({publicToken}) {
-    // const [accessToken,setAccessToken] = useState();
+    const [data,setData] = useState();
 
-    useEffect( () => {
-        async function fetchData() {
+    useEffect(() => {
+        // const transactions = fetchTransactions({publicToken});
+        const transactions = {Food: [2], Travel: [0, 1, 5], Bills: [3], Other: [4]};
+        setData(transactions);
+    }, []);
+    
+    return (
+        <div className='container'>
+            {console.log(data)}
+            {CategoriesPieChart(data)}
+        </div>
+    );
+}
+
+async function fetchTransactions({publicToken}) {
             // Gain access to the logged in bank account.
             let accessTokenResponse;
             try {
                 accessTokenResponse  = await axios.post("/exchange_public_token",{public_token: publicToken})
             } catch (error) {
                 //@kevin here < Where login failed < Display it
+                alert(error)
             }
 
             const accessToken = accessTokenResponse.data.public_token_exchange;
@@ -29,15 +46,41 @@ function Dashboard({publicToken}) {
             });
             } catch (error) {
                 // @Kevin nerds, Failed to categorised transcations < Display its failure
+                alert(error)
             }
-        }
-        fetchData();
-      }, [])
+            return categorisedTransactions;
+}
+
+function CategoriesPieChart(transactions) {
+    let categories = new Array(0);
+    let totals = new Array(0);
+
+    Object.entries(transactions).forEach(([key, value]) => {
+        categories.push(key);
+        totals.push(Object.keys(value).length);
+    })
+
+    console.log(categories);
+    console.log(totals);
+
+    const filteredData = {
+        labels: categories,
+        datasets: [{
+            label: "Spending Categories",
+            data: totals,
+            hoverOffset: 4
+        }]
+    }
+
     return (
-        <div>
-            <h3>Welcome to the Dashboard</h3>
-        </div>
-    )
+    <Doughnut 
+        data = {filteredData}
+        height = {400}
+        width = {600}
+        options = {{
+            maintainAspectRatio: false
+        }}
+    />);
 }
 
 export default Dashboard;

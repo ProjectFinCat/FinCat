@@ -2,13 +2,11 @@
   cursor: pointer;
   position: relative;
   padding: 10px 24px;
-  font-size: 18px;
-  color: rgb(255, 255, 255);
-  border: 2px solid white;
-  box-shadow: 0px 0px 40px rgba(0, 0, 0, 0.25);
+  font-size: 24px;
+  color: white;
+  border: 0px;
   border-radius: 7px;
-  background-color: transparent;
-  font-weight: 600;
+  background-color: #3a3a78;
   transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
   overflow: hidden;
 }
@@ -18,13 +16,11 @@
 }
 
 .plaid-button:hover {
-  color: rgb(255, 255, 255);
-  scale: 1.1;
-  box-shadow: 0 0px 10px white;
+  color: white;
+  scale: 1.15;
+  box-shadow: 0 0px 20px rgb(58, 58, 120, 0.5);
 }
 
 .plaid-button:active {
   scale: 1;
 }
-
-

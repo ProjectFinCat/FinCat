@@ -10,20 +10,23 @@ axios.defaults.baseURL = "http://localhost:3001"
 function App() {
   const [publicToken,setPublicToken] = useState();
   return (
-    <div className="container">
+    <div>
       {publicToken ? <Dashboard publicToken={publicToken}/> :
-      <div className="App">
-        <header className="App-header">
-          <h1>
-            FinCat
-          </h1>
-          <img src={logo} className="App-logo" alt="logo" />
-              <h3>Connect your bank account via Plaid</h3>
-              <PlaidButton setPublicToken={setPublicToken} />
-        </header>
+      <div className="container">
+        <div className="App">
+          <header className="App-header">
+            <h1>
+              FinCat
+            </h1>
+            <img src={logo} className="App-logo" alt="logo" />
+                <h4>Connect your bank account via Plaid</h4>
+                <PlaidButton setPublicToken={setPublicToken} />
+          </header>
+        </div>
       </div>
-      }
+  }
     </div>
+
   );
 }
 
